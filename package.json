@@ -1,0 +1,11 @@
+{
+  "name": "ethblockexplorer",
+  "version": "1.0.0",
+  "description": "Ethereum Block Explorer",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Faina Shalts",
+  "license": "MIT"
+}
