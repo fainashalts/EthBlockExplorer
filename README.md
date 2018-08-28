@@ -32,8 +32,11 @@ Creating a centrally hosted search option is another possible optimization. Simi
 
 The major drawback here is that this would be a centralized search engine, would need to be synced with new blocks regularly, and would need some sort of mechanism in place to ensure fidelity to the information contained in the blockchain itself.
 
-3) Concurrent Processes 
-Another possible optimization is to run concurrent processes when querying Infura. Javascript is single-threaded, but there are some options for running essentially multi-threaded processes using Node. Other programming languages may provide easier implementations for multi-threaded requests. 
+3) Swarm/IPFS, some other database to hold Ethereum blockchain data for easier search
+If centralization is a concern, something like Swarm or IPFS could be an option. Main drawback here is that as far as I can tell, the functionality is not as developed so implementing a good search would require more work out the gate. 
+
+4) Concurrent Processes 
+Another possible optimization is to run concurrent processes when querying Infura. Javascript is single-threaded, but there are some options for running essentially multi-threaded processes using Node. Other programming languages may provide easier implementations for multi-threaded requests, as well as parallel requests, which would likely provide greater optimization.
 
 A drawback of this approach is the possibility of rate limits stopping out multiple processes. The discussion here is somewhat unclear about whether Infura currently implements any sort of rate limit: https://github.com/INFURA/infura/issues/58
 

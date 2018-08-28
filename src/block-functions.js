@@ -5,98 +5,149 @@ const web3 = new Web3(new Web3.providers.HttpProvider(infura));
 
 var EthBlockExplorer = {
 
+//web3 functions
   getLatestBlock: function() {
    return web3.eth.blockNumber;
   },
 
-  getTransaction: function(transactionHash) {
-    
-    return web3.eth.getTransaction(transactionHash);
-  },
+  getBlock: function(blockNumber) {
+    let blockObject = {}
+    const block =  web3.eth.getBlock(blockNumber, true);
+    blockObject['block number'] = blockNumber;
+    blockObject['totalTransactions'] = Object.keys(block.transactions).length; 
+    blockObject['transactions'] = block.transactions;
 
-  getTransactionsInBlock: function(blockNumber) {
-    var self = this;
-
-    var block =  web3.eth.getBlock(blockNumber);
-    var transactionHashes = block.transactions;
-    var transactionsFromBlock = [];
-    var blockTotalValue = 0;
-    var totalTransactions = 0;
-    var totalContracts = 0;
-    if(transactionHashes.length > 0) {
-      for(var i = 0; i < transactionHashes.length; i++) {
-      var transaction = self.getTransaction(transactionHashes[i]);
-      var transactionObject = {};
-      totalTransactions += 1;
-
-      // only passing the items we plan to display from the transaction to return to the calling function
-      transactionObject.blockNumber = transaction.blockNumber;
-      transactionObject.transactionHash = transaction.hash;
-      transactionObject.from = transaction.from;
-      transactionObject.to = transaction.to; 
-
-
-      // ****TODO**** need to check if the to field is null before deciding an item is contract
-      if(transaction.value > 0) {
-        var transaction_value = transaction.value *  Math.pow(10, -18);
-        transactionObject.value = transaction_value.toFixed(5);
-      } else {
-        transactionObject.value = 0;
-      }
-
-      if(transactionObject.to == null) {
-        transactionObject.isContract = 1;
-        totalContracts += 1;
-      } else {
-        transactionObject.isContract = 0;
-      }
-
-      blockTotalValue = blockTotalValue + parseFloat(transactionObject.value);
-
-      transactionsFromBlock.push(transactionObject);
-      }
-    } 
-
-    // aggregating values to make it easier to put this data together at the multi-block level
-    transactionsFromBlock.blockTotalValue = blockTotalValue;
-    transactionsFromBlock.totalTransactions = totalTransactions;
-    transactionsFromBlock.totalContracts = totalContracts;
-    
-    //this returns an array of all transactions in this block plus aggregate data for the block
-    return transactionsFromBlock;
-  },
-
-  getBlockRangeTransactions: function(blockRange){
-    var self = this;
-    var blockObject = {}
-    var blocksAggregateValue = 0;
-    var blocksAggregateTotalTransactions = 0;
-    var blocksAggregateTotalContracts = 0;
-    for(var i = blockRange[0]; i <= blockRange[1]; i++) {
-      var transactionsList = self.getTransactionsInBlock(i);
-      if(transactionsList.length > 0) {
-        blocksAggregateValue = blocksAggregateValue + transactionsList.blockTotalValue;
-        blocksAggregateTotalTransactions = blocksAggregateTotalTransactions + transactionsList.totalTransactions;
-        blocksAggregateTotalContracts = blocksAggregateTotalContracts + transactionsList.totalContracts;
-        blockObject[i] = transactionsList;
-      } else {
-        blockObject[i] = 'no transactions in this block'; 
-      }
-    }
-
-    blockObject.aggregateData = {"totalValue" : blocksAggregateValue, "percentageContracts": blocksAggregateTotalContracts / blocksAggregateTotalTransactions}
-  
     return blockObject;
   },
 
-  blockExplorerData: function(blockRange) {
-    var self = this;
-    
-    var blockTransactions = self.getBlockRangeTransactions(blockRange);
+//functions for aggregating and processing data
+  processTransaction: function(transaction) {
+    let self = this;
+    let transactionObject = {};
 
-    console.log(JSON.stringify(blockTransactions, null, 2));
+    transactionObject['Block Number'] = transaction.blockNumber;
+    transactionObject['Transaction Hash'] = transaction.hash;
+    transactionObject['From Address'] = transaction.from;
+    transactionObject['To Address'] = transaction.to;
+    if(transaction.value > 0) {
+        var transaction_value = transaction.value *  Math.pow(10, -18);
+        transactionObject['Amount of Ether'] = transaction_value.toFixed(5);
+    } else {
+        transactionObject['Amount of Ether'] = 0;
+    }
+    
+    return transactionObject;
+  },
+
+  
+  aggregate: function(arrayToReduce){
+    const sum = arrayToReduce.reduce((total, amount) => parseFloat(total) + parseFloat(amount)); 
+    return sum;
+  },
+  transactionAmount: function(transaction) {
+    return transaction['Amount of Ether'];
+  }, 
+  numberOfTransactions: function(block) {
+    return block['totalTransactions'];
+  },
+
+  fromAddress: function(transaction) {
+    const fromAddress = transaction["From Address"];
+    // const isContract = web3.eth.getCode(fromAddress);
+    // if(isContract !== '0x') {
+    //   fromAddress = "Contract Address " + fromAddress;
+    // }
+    return fromAddress;
+  },
+  toAddress: function(transaction) {
+    let toAddress = transaction["To Address"]
+    // const isContract = web3.eth.getCode(toAddress);
+    // if(isContract !== '0x') {
+    //   toAddress = "Contract Address " + toAddress;
+    // }
+    return toAddress;
+  },
+  unique: function(value, index, self) { 
+    return self.indexOf(value) === index;
+  },
+  
+  aggregateData: async function(blockData, transactionData) {
+    let self = this;
+    let aggregateData = {};
+    let fromAddressObj = {};
+    let toAddressObj = {};
+
+    const amountsTransferred = await transactionData.map(self.transactionAmount);
+    const totalTransactionsPerBlock =  await blockData.map(self.numberOfTransactions);
+
+    //move these into a separate  function to get unique addresses? then I can Promise.all the other function calls
+    const fromAddresses = await transactionData.map(self.fromAddress);
+    const uniqueFromAddresses = await fromAddresses.filter(self.unique); 
+    const toAddresses = await transactionData.map(self.toAddress);
+    const uniqueToAddresses = await toAddresses.filter(self.unique); 
+
+    // await Promise.all(fromAddresses, uniqueFromAddresses, toAddresses, uniqueToAddresses, fromContractAddresses, toContractAddresses);
+
+
+    aggregateData["Total Amount of Ether Transferred"] = self.aggregate(amountsTransferred);
+    aggregateData["Total Transactions in this Report"] = self.aggregate(totalTransactionsPerBlock);
+    aggregateData["Unique Addresses Receiving Ether"] = uniqueToAddresses;
+    aggregateData["Number of Unique Addresses Receiving Ether"] = uniqueToAddresses.length;
+    aggregateData["Unique Addresses Sending Ether"] = uniqueFromAddresses;
+    aggregateData["Number of Unique Addresses Sending Ether"] = uniqueFromAddresses.length;
+
+    return aggregateData;
+  }, 
+
+  transactionData: async function(transactions) {
+    let self = this; 
+
+    const transactionData = await transactions.map(self.processTransaction);
+
+    // await Promise.all(transactionData);
+
+    return transactionData;
+  },
+
+  blockData: async function(blockRange) {
+    let self = this;
+    
+    const blockList = Array(blockRange[1] - blockRange[0] + 1).fill().map((item, index) => blockRange[0] + index);
+    const blockData = await blockList.map(self.getBlock);
+
+    // await Promise.all(blockData);
+
+    return blockData;
+  }, 
+
+
+  blockExplorerData: async function(blockRange) {
+    let self = this;
+
+    const blockData = await self.blockData(blockRange);
+
+
+    let transactions = blockData[0].transactions;
+
+    for (let i = 1; i < blockData.length; i++) {
+      transactions = transactions.concat(blockData[i].transactions);
+    }
+
+    const transactionData = await self.transactionData(transactions);
+    
+    const aggregateData = await self.aggregateData(blockData, transactionData);
+
+    const blockExplorerData = await Promise.all(blockData, transactionData. aggregateData);
+
+
+
+    console.log(JSON.stringify(blockData, null, 2));
+    console.log(JSON.stringify(transactionData, null, 2));
+    console.log(JSON.stringify(aggregateData, null, 2));
   }
 
 }
+
+
 
 module.exports = EthBlockExplorer;
