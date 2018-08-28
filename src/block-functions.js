@@ -74,16 +74,18 @@ var EthBlockExplorer = {
   aggregateData: async function(blockData, transactionData) {
     let self = this;
     let aggregateData = {};
-    let fromAddressObj = {};
+    let   = {};
     let toAddressObj = {};
 
-    const amountsTransferred = await transactionData.map(self.transactionAmount);
-    const totalTransactionsPerBlock =  await blockData.map(self.numberOfTransactions);
+    const amountsTransferred = transactionData.map(self.transactionAmount);
+    const totalTransactionsPerBlock =  blockData.map(self.numberOfTransactions);
 
     //move these into a separate  function to get unique addresses? then I can Promise.all the other function calls
-    const fromAddresses = await transactionData.map(self.fromAddress);
+    const fromAddresses = transactionData.map(self.fromAddress); 
+    const toAddresses = transactionData.map(self.toAddress);
+
+    await Promise.all(amountsTransferred, totalTransactionsPerBlock, fromAddresses, toAddresses);
     const uniqueFromAddresses = await fromAddresses.filter(self.unique); 
-    const toAddresses = await transactionData.map(self.toAddress);
     const uniqueToAddresses = await toAddresses.filter(self.unique); 
 
     // await Promise.all(fromAddresses, uniqueFromAddresses, toAddresses, uniqueToAddresses, fromContractAddresses, toContractAddresses);
@@ -104,7 +106,6 @@ var EthBlockExplorer = {
 
     const transactionData = await transactions.map(self.processTransaction);
 
-    // await Promise.all(transactionData);
 
     return transactionData;
   },
