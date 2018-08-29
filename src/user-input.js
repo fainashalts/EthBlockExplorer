@@ -1,8 +1,11 @@
+/**
+* @module userInput;
+* @requires module:blockFunctions
+*/
 const inquirer = require('inquirer');
 const blockFunctions = require("./block-functions");
 
 
-//variables for getting user input using inquirer plugin
 const inquiryType = [
   {
     type : 'list',
@@ -36,40 +39,76 @@ const provideBlockRange = [
 
 var userInput = {
 
-  //get data about block(s) in question based on what user asks for
+ /**
+ * validates user input
+ * @param {Object} answers - user input 
+ * @param {string} [answers.howManyBlocksBack]
+ * @param {string} [answers.blockRangeStart]
+ * @param {string} [answers.blockRangeEnd]
+ */
+ validateUserInput: function(answers) {
+  let self = this;
+  
+  if(answers["howManyBlocksBack"] && Number.isNaN(+answers["howManyBlocksBack"])) {
+    console.log("Please provide an integer");
+    self.startPrompt();
+  } else if (answers["blockRangeStart"] && (Number.isNaN(+answers["blockRangeStart"]) || Number.isNaN(+answers["blockRangeStart"]))) {
+    console.log("Please provide integer values for the starting and ending blocks");
+    self.startPrompt();
+  } else if (answers["blockRangeStart"] && (parseInt(answers["blockRangeEnd"]) < parseInt(answers["blockRangeStart"]))) {
+    console.log("Please make sure that your starting block is smaller than your ending block")
+    self.startPrompt();
+  } else {
+    self.getBlockData(answers);
+  }
+ },
+
+  /** 
+  * get data about block(s) in question based on what user asks for
+  * @param {Object} answers - user input 
+  * @param {string} [answers.howManyBlocksBack] 
+  * @param {string} [answers.blockRangeStart] 
+  * @param {string} [answers.blockRangeEnd]
+  */
   getBlockData: function(answers){
-    var self = this;
-    // process answers here to create a block range and pass to EthBlockExplorer functions
-    var blockRange = [];
+    let self = this;
+    let blockRange = [];
     if(answers.blockRangeStart && answers.blockRangeEnd) {
       blockRange = [answers.blockRangeStart, answers.blockRangeEnd];
     } else if(answers.howManyBlocksBack) {
-      var latestBlock = blockFunctions.getLatestBlock();
-      var startBlock = latestBlock - answers.howManyBlocksBack;
+      let latestBlock = blockFunctions.getLatestBlock();
+      let startBlock = latestBlock - answers.howManyBlocksBack;
       blockRange = [startBlock ,latestBlock]
     }
 
     blockFunctions.blockExplorerData(blockRange);
   },
+ 
 
-  //process user request (answers to input questions) before passing query to getBlockData;
+  
+  /**
+  * process user request (answers to input questions) before passing query to getBlockData;
+  * @param {Object} answers 
+  * @param {string} answers.inquiryType  - type of inquiry user is making 
+  */
   process: function(answers){
-    var self = this;
+    let self = this;
     if(answers.inquiryType == inquiryType[0].choices[0]) {
-      inquirer.prompt(goingBackFromRecentBlock).then(answers=> self.getBlockData(answers));
+      inquirer.prompt(goingBackFromRecentBlock).then(answers=> self.validateUserInput(answers));
     } else {
-      inquirer.prompt(provideBlockRange).then(answers=> self.getBlockData(answers));
+      inquirer.prompt(provideBlockRange).then(answers=> self.validateUserInput(answers));
     }
   },
 
-  //begin prompting of user for info to query from Ethereum blockchain
+  /**
+  * prompt user for info to query from Ethereum blockchain
+  **/
   startPrompt: function() {
-    var self = this;
+    let self = this;
     inquirer.prompt(inquiryType).then(answers => self.process(answers));
   }  
 }
 
-// userInput.startPrompt();
 
 module.exports = userInput;
 
