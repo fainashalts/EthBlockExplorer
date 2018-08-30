@@ -9,6 +9,7 @@ Given the user input, this tool will provide the following about each block quer
 1) Amount of Ether transferred in total
 2) The unique addresses that received Ether and the amount received in total, as well as whether the address is a contract address
 3) The unique addresses that sent Ether and the amount they sent in total, as well as whether the address is a contract address
+4) Transaction-level data, for more detail
 
 
 # USAGE
