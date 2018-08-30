@@ -7,16 +7,17 @@ A user may input either a single number representing how far back from the prese
 Given the user input, this tool will provide the following about each block queried: 
 
 1) Amount of Ether transferred in total
-2) The addresses that received Ether and the amount received in total
-3) The addresses that sent Ether and the amount they sent in total
-4) Which of the addresses listed for teh block are contract addresses
+2) The unique addresses that received Ether and the amount received in total, as well as whether the address is a contract address
+3) The unique addresses that sent Ether and the amount they sent in total, as well as whether the address is a contract address
 
 
 # USAGE
 
-npm install ethblockexplorer
+clone repository in your local
 
-Oonce installed, create a .env file with your Infura token, in order to use Infura to access the Ethereum blockchain. You must have your own token in order to access Infura. Sign up here: https://infura.io/
+npm install
+
+in command line, enter ./index.js to start interacting with this module
 
 # Optimization Ideas
 
@@ -27,8 +28,9 @@ Caching the results of previous queries or already existing blocks would signifi
 
 Of course, if a user runs their own node locally, they could bypass a great deal of this inefficiency, and may not need to cache previous blocks.
 
+
 2) ElasticSearch 
-Creating a centrally hosted search option is another possible optimization. Similar to caching, using something like ElasticSearch to index the Ethereum blockchain and provide optimized search options would greatly increase the speed with which queries could be made. Several examples of such a service currently being developed exist, such as this one: http://jonathanpatrick.me/blog/elastic-ethereum
+Creating a centrally hosted, indexed search option is another possible optimization. Similar to caching, using something like ElasticSearch to index the Ethereum blockchain and provide optimized search options would greatly increase the speed with which queries could be made. Several examples of such a service currently being developed exist, such as this one: http://jonathanpatrick.me/blog/elastic-ethereum
 
 The major drawback here is that this would be a centralized search engine, would need to be synced with new blocks regularly, and would need some sort of mechanism in place to ensure fidelity to the information contained in the blockchain itself.
 
@@ -36,7 +38,7 @@ The major drawback here is that this would be a centralized search engine, would
 If centralization is a concern, something like Swarm or IPFS could be an option. Main drawback here is that as far as I can tell, the functionality is not as developed so implementing a good search would require more work out the gate. 
 
 4) Concurrent Processes 
-Another possible optimization is to run concurrent processes when querying Infura. Javascript is single-threaded, but there are some options for running essentially multi-threaded processes using Node. Other programming languages may provide easier implementations for multi-threaded requests, as well as parallel requests, which would likely provide greater optimization.
+Another possible optimization is to run concurrent processes when querying Infura. Javascript is single-threaded, but there are some options for running essentially multi-threaded processes. I have attempted to use Promise.all in a few spots in my code, but since many queries depend on the results of previous queries (i.e. one needs transaction data before querying the addresses inside each transaction), there are not that many places where that is helpful.
 
 A drawback of this approach is the possibility of rate limits stopping out multiple processes. The discussion here is somewhat unclear about whether Infura currently implements any sort of rate limit: https://github.com/INFURA/infura/issues/58
 

@@ -48,6 +48,7 @@ var userInput = {
  */
  validateUserInput: function(answers) {
   let self = this;
+  let maxBlock = blockFunctions.getLatestBlock();
   
   if(answers["howManyBlocksBack"] && Number.isNaN(+answers["howManyBlocksBack"])) {
     console.log("Please provide an integer");
@@ -58,6 +59,8 @@ var userInput = {
   } else if (answers["blockRangeStart"] && (parseInt(answers["blockRangeEnd"]) < parseInt(answers["blockRangeStart"]))) {
     console.log("Please make sure that your starting block is smaller than your ending block")
     self.startPrompt();
+  } else if(answers["blockRangeStart"] && answers["blockRangeEnd"] > maxBlock) {
+    console.log("The latest block is #" + maxBlock + "- please enter an ending block less than or equal to this");
   } else {
     self.getBlockData(answers);
   }
@@ -80,7 +83,7 @@ var userInput = {
       let startBlock = latestBlock - answers.howManyBlocksBack;
       blockRange = [startBlock ,latestBlock]
     }
-
+    console.log("Thanks! Loading your report...")
     blockFunctions.blockExplorerData(blockRange);
   },
  

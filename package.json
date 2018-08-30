@@ -3,16 +3,10 @@
   "version": "1.0.0",
   "description": "Ethereum Block Explorer",
   "main": "index.js",
-  "scripts": {
-    "test": "mocha"
-  },
   "author": "Faina Shalts",
   "license": "MIT",
   "dependencies": {
-    "chai": "^4.1.2",
-    "dotenv": "^6.0.0",
     "inquirer": "^6.2.0",
-    "mocha": "^5.2.0",
     "web3": "^0.20.0"
   }
 }
